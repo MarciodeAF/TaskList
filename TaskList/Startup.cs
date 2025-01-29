@@ -30,6 +30,7 @@ namespace TaskList
             services.AddDbContext<ApplicationDbContext>(options =>
                  options.UseSqlServer(Configuration.GetConnectionString("SqlConnection")));
 
+            
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {

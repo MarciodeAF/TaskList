@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,15 +14,26 @@ namespace TaskList.Controllers
     public class TasksController : Controller
     {
         private readonly ApplicationDbContext _tasksDbContext;
-        public TasksController(ApplicationDbContext tasksDbContext)
+
+        private readonly IConfiguration _configuration;
+        private string _connectionString;
+        DbContextOptionsBuilder<ApplicationDbContext> _optionsBuilder;
+
+        public TasksController(IConfiguration configuration)
         {
-            _tasksDbContext = tasksDbContext;
+            _configuration = configuration;
+            _optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
+            _connectionString = _configuration.GetConnectionString("SqlConnection");
+            _optionsBuilder.UseSqlServer(_connectionString);
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Entities.Task>>> GetAllTask()
         {
-            return Ok(await _tasksDbContext.Tasks.ToListAsync());
+            using (ApplicationDbContext _context = new ApplicationDbContext(_optionsBuilder.Options))
+            {
+                return Ok(await _context.Tasks.ToListAsync());
+            }
         }
 
         [HttpPost]
@@ -29,8 +41,13 @@ namespace TaskList.Controllers
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
-            await _tasksDbContext.Tasks.AddAsync(task);
-            await _tasksDbContext.SaveChangesAsync();
+
+            using (ApplicationDbContext _context = new ApplicationDbContext(_optionsBuilder.Options))
+            {
+                await _context.Tasks.AddAsync(task);
+                await _context.SaveChangesAsync();
+            }
+
             return Ok(task);
         }
 
@@ -39,29 +56,36 @@ namespace TaskList.Controllers
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
-            var task = await _tasksDbContext.Tasks.FindAsync(id);
-            if (task == null)
-            {
-                return NotFound();
-            }
-            task.Name = taskFromJson.Name;
-            task.Description = taskFromJson.Description;
-            await _tasksDbContext.SaveChangesAsync();
 
-            return Ok(task);
+            using (ApplicationDbContext _context = new ApplicationDbContext(_optionsBuilder.Options))
+            {
+                var task = await _context.Tasks.FindAsync(id);
+                if (task == null)
+                {
+                    return NotFound();
+                }
+                task.Name = taskFromJson.Name;
+                task.Description = taskFromJson.Description;
+                await _context.SaveChangesAsync();
+                return Ok(task);
+            }
         }
+
         [HttpDelete("{id}")]
         public async Task<ActionResult<Entities.Task>> Delete(int id)
         {
-            var task = await _tasksDbContext.Tasks.FindAsync(id);
-            if (task == null)
+            using (ApplicationDbContext _context = new ApplicationDbContext(_optionsBuilder.Options))
             {
-                return NotFound();
-            }
-            _tasksDbContext.Remove(task);
-            await _tasksDbContext.SaveChangesAsync();
+                var task = await _context.Tasks.FindAsync(id);
+                if (task == null)
+                {
+                    return NotFound();
+                }
+                _context.Remove(task);
+                await _context.SaveChangesAsync();
 
-            return Ok(task);
+                return Ok(task);
+            }              
         }
     }
 }

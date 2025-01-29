@@ -7,7 +7,7 @@ services:
       context: .
       dockerfile: TaskList/Dockerfile
     depends_on:
-      - sqlserver
+      - sqlserver     
 
   sqlserver:
     container_name: db_service
@@ -15,10 +15,9 @@ services:
     hostname: 'sqlserver'
     environment:
       ACCEPT_EULA: 'Y'
-      SA_PASSWORD: "mco#2025"
-    volumes:
-      - c:\dados\volumes\mssql:/var/opt/mssql3
+      SA_PASSWORD: "mco#2025"   
     ports:
-      - '11433:1433'    
+      - '1433:1433'    
     expose:
       - 1433
+
