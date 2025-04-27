@@ -12,7 +12,7 @@ services:
   sqlserver:
     container_name: db_service
     image: mcr.microsoft.com/mssql/server:2017-latest
-    hostname: 'sqlserver'
+    hostname: 'sqlserver'     
     environment:
       ACCEPT_EULA: 'Y'
       SA_PASSWORD: "mco#2025"
